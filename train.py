@@ -401,7 +401,7 @@ if __name__ == "__main__":
                         help="Hidden dimension for LSTM/Transformer")
     parser.add_argument("--num_layers", type=int, default=3, help="LSTM layers")
     parser.add_argument("--nhead", type=int, default=8, help="Transformer attention heads")
-    parser.add_argument("--num_encoder_layers", type=int, default=3, help="Transformer encoder layers")
+    parser.add_argument("--num_encoder_layers", type=int, default=4, help="Transformer encoder layers")
     parser.add_argument("--dropout", type=float, default=0.1, help="Dropout rate")
 
     # Training

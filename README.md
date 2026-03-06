@@ -47,22 +47,27 @@ Pose   Gaze   -IAT
 
 ## Results
 
-Performance on the OBC dataset (79 classes, random 80/10/10 split):
+### Performance vs. Efficiency (Table 5 from the paper)
 
-| Model | Features | Seq. Config | Macro F1 |
-|-------|----------|-------------|----------|
-| MLP | Pose+Gaze+FM | 1 frame (static) | 0.8474 |
-| LSTM | Pose+Gaze+FM | 30 frames | 0.9931 |
-| **Transformer** | **Pose+Gaze+FM** | **span=50, sample=25** | **0.9570** |
+| Model | Config (L_span, S, L_samples) | Macro F1 | Params (M) | GFLOPs | Time (ms) |
+|-------|-------------------------------|----------|------------|--------|-----------|
+| MLP | Frame-level | 0.6705 | 0.06 | <0.001 | 0.08 |
+| LSTM (Low-Cost) | (10, 10, 5) | 0.6601 | 1.39 | 0.01 | 0.17 |
+| LSTM (High-Perf.) | (40, 10, 40) | 0.9931 | 1.39 | 0.05 | 0.44 |
+| Transformer (Efficient) | (10, 5, 5) | 0.9395 | 4.24 | 0.02 | 0.33 |
+| **Transformer (Best-Perf.)** | **(50, 10, 50)** | **0.9570** | **4.24** | **0.21** | **0.34** |
 
-### Feature Ablation (LSTM, 30-frame sequences)
+### Input Modality Ablation (Table 3, L_span=30, S=10, L_samples=30)
 
-| Features | Dim | Macro F1 |
-|----------|-----|----------|
-| Pose only | 34 | 0.8780 |
-| Pose + Gaze | 36 | 0.9069 |
-| Pose + FM | 46 | 0.9069 |
-| Pose + Gaze + FM | 48 | 0.8996 |
+| Features | MLP | LSTM | Transformer |
+|----------|-----|------|-------------|
+| Pose | 0.6358 | 0.8784 | 0.8759 |
+| Gaze | 0.0150 | 0.1145 | 0.1338 |
+| FM | 0.2386 | 0.5425 | 0.7158 |
+| Pose + Gaze | 0.6375 | 0.8875 | 0.8785 |
+| Pose + FM | 0.6668 | 0.8838 | 0.9081 |
+| Gaze + FM | 0.2663 | 0.5306 | 0.6611 |
+| **Pose + Gaze + FM** | **0.6705** | **0.8941** | **0.8970** |
 
 ---
 
@@ -70,9 +75,11 @@ Performance on the OBC dataset (79 classes, random 80/10/10 split):
 
 All experiments use the **Occupant Behavior Classification (OBC)** dataset, collected at the University of Michigan Transportation Research Institute (UMTRI).
 
-- ~2.1 million frames across **79 behavior classes** from **42 participants**
-- Recorded in a controlled, stationary vehicle environment
-- **Note**: The OBC dataset is not publicly available. This code can be adapted to any similarly structured dataset.
+- ~2.1 million frames (10 fps, 1280x720) across **79 behavior classes** from **42 participants** (21M / 21F)
+- Recorded in a stationary 2018 Hyundai Genesis G90 with two Microsoft Azure Kinect sensors
+- Three driving modes: Manual (MN), Semi-Automated (SA), Fully Automated (FA)
+- Data split: 80% train (1.68M frames), 10% validation (210K), 10% test (210K)
+- **Note**: The OBC dataset is not publicly available due to privacy. This code can be adapted to any similarly structured dataset.
 
 ### Expected Data Structure
 
@@ -185,14 +192,15 @@ python train.py \
     --batch_size 256 --epochs 200 --lr 1e-3 --patience 10
 ```
 
-**Transformer:**
+**Transformer (paper config):**
 ```bash
 python train.py \
-    --data_path features/pose_gaze_fm_30f10s_10.pt \
+    --data_path features/pose_gaze_fm_50f10s_50.pt \
     --model transformer \
     --features pose+gaze+fm \
-    --hidden_dim 256 --nhead 8 --num_encoder_layers 3 \
-    --batch_size 256 --epochs 200 --lr 1e-3 --patience 10
+    --hidden_dim 256 --nhead 8 --num_encoder_layers 4 \
+    --dropout 0.2 \
+    --batch_size 128 --epochs 200 --lr 1e-4 --patience 10
 ```
 
 **MLP (single-frame baseline):**
