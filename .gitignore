@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+*.conda/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Data & model files
+*.pt
+*.pth
+*.pth.tar
+*.pkl
+*.h5
+
+# Feature directories
+saved_frames_*/
+features/
+checkpoints/
+
+# Results
+results/
+
+# Logs
+log/
+*.out
+*.err
+completed_paths*.txt
+
+# SLURM
+*.submit
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+*.zip
+*.tar.gz
