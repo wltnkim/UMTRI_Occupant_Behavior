@@ -1,53 +1,48 @@
-# Robust Occupant Behavior Recognition via Multimodal Sequence Modeling
+# UMTRI Occupant Behavior Recognition
 
-Official implementation of:
+[![Paper](https://img.shields.io/badge/Sensors-2025-blue)](https://www.mdpi.com/1424-8220/25/20/6323)
+[![DOI](https://img.shields.io/badge/DOI-10.3390%2Fs25206323-green)](https://doi.org/10.3390/s25206323)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> **Robust Occupant Behavior Recognition via Multimodal Sequence Modeling: A Comparative Study for In-Vehicle Monitoring Systems**
->
-> Jisu Kim and Byoung-Keon D. Park
->
-> *Sensors*, 2025, 25(20), 6323 &nbsp; | &nbsp; [Paper](https://www.mdpi.com/1424-8220/25/20/6323) &nbsp; | &nbsp; DOI: [10.3390/s25206323](https://doi.org/10.3390/s25206323)
+Official implementation of **"Robust Occupant Behavior Recognition via Multimodal Sequence Modeling: A Comparative Study for In-Vehicle Monitoring Systems"**
+Jisu Kim and Byoung-Keon D. Park, *Sensors* 2025, 25(20), 6323.
+[[Paper]](https://www.mdpi.com/1424-8220/25/20/6323) · [[DOI]](https://doi.org/10.3390/s25206323)
 
-This repository provides code for a lightweight framework that recognizes in-vehicle occupant behaviors using three hand-crafted visual features: **2D Pose**, **2D Gaze**, and **Facial Movement (Action Units)**. We compare three temporal classifiers — MLP, LSTM, and Transformer — and show that the **Transformer encoder achieves the best Macro F1 of 0.9570** on the OBC dataset.
+A lightweight framework that recognizes in-vehicle occupant behavior from three hand-crafted visual features: **2D pose**, **2D gaze**, and **facial movement (action units)**. We compare MLP, LSTM, and Transformer temporal classifiers; the **Transformer encoder reaches the best Macro F1 of 0.9570** on the OBC dataset.
 
----
+## Contents
 
-## Pipeline Overview
+- [Pipeline](#pipeline)
+- [Results](#results)
+- [Dataset](#dataset)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Features](#features)
+- [Project structure](#project-structure)
+- [Citation](#citation)
+- [License](#license)
+
+## Pipeline
 
 ```
-Raw Video Frames
-       |
-       v
-+------+------+------+
-|      |      |      |
-v      v      v      v
-YOLO   Uni    FMAE   (per-frame feature extraction)
-Pose   Gaze   -IAT
-(34d)  (2d)   (12d)
-|      |      |
-+------+------+
-       |
-       v
-  Merge & L2-Normalize
-  -> 48-dim feature vector per frame
-       |
-       v
-  Sliding Window + Uniform Subsampling
-  -> Temporal sequences [T, 48]
-       |
-       v
-  +----+----+-------------+
-  |         |             |
-  v         v             v
- MLP      LSTM      Transformer
-(static) (recurrent) (attention)
+Raw video frames
+      |
+      +--> YOLOv8-Pose   (34-d) --+
+      +--> UniGaze       ( 2-d) --+--> merge + L2-normalize --> 48-d per frame
+      +--> FMAE-IAT      (12-d) --+
+                                        |
+                                        v
+                       sliding window + uniform subsampling
+                                  [T, 48] sequences
+                                        |
+                       +----------------+----------------+
+                       v                v                v
+                      MLP             LSTM          Transformer
 ```
-
----
 
 ## Results
 
-### Performance vs. Efficiency (Table 5 from the paper)
+**Performance vs. efficiency** (Table 5 in the paper)
 
 | Model | Config (L_span, S, L_samples) | Macro F1 | Params (M) | GFLOPs | Time (ms) |
 |-------|-------------------------------|----------|------------|--------|-----------|
@@ -57,7 +52,7 @@ Pose   Gaze   -IAT
 | Transformer (Efficient) | (10, 5, 5) | 0.9395 | 4.24 | 0.02 | 0.33 |
 | **Transformer (Best-Perf.)** | **(50, 10, 50)** | **0.9570** | **4.24** | **0.21** | **0.34** |
 
-### Input Modality Ablation (Table 3, L_span=30, S=10, L_samples=30)
+**Input modality ablation** (Table 3 in the paper; L_span=30, S=10, L_samples=30; Macro F1)
 
 | Features | MLP | LSTM | Transformer |
 |----------|-----|------|-------------|
@@ -69,19 +64,18 @@ Pose   Gaze   -IAT
 | Gaze + FM | 0.2663 | 0.5306 | 0.6611 |
 | **Pose + Gaze + FM** | **0.6705** | **0.8941** | **0.8970** |
 
----
-
 ## Dataset
 
-All experiments use the **Occupant Behavior Classification (OBC)** dataset, collected at the University of Michigan Transportation Research Institute (UMTRI).
+Experiments use the **Occupant Behavior Classification (OBC)** dataset, collected at the University of Michigan Transportation Research Institute (UMTRI).
 
-- ~2.1 million frames (10 fps, 1280x720) across **79 behavior classes** from **42 participants** (21M / 21F)
+- ~2.1M frames (10 fps, 1280×720), **79 behavior classes**, **42 participants** (21 M / 21 F)
 - Recorded in a stationary 2018 Hyundai Genesis G90 with two Microsoft Azure Kinect sensors
 - Three driving modes: Manual (MN), Semi-Automated (SA), Fully Automated (FA)
-- Data split: 80% train (1.68M frames), 10% validation (210K), 10% test (210K)
-- **Note**: The OBC dataset is not publicly available due to privacy. This code can be adapted to any similarly structured dataset.
+- Split: 80% train (1.68M frames), 10% validation (210K), 10% test (210K)
 
-### Expected Data Structure
+> **Note:** The OBC dataset is not publicly available for privacy reasons. The code can be adapted to any similarly structured dataset.
+
+Expected layout:
 
 ```
 <dataset_root>/
@@ -93,8 +87,6 @@ All experiments use the **Occupant Behavior Classification (OBC)** dataset, coll
         ...
 ```
 
----
-
 ## Installation
 
 ```bash
@@ -103,53 +95,41 @@ cd UMTRI_Occupant_Behavior
 pip install -r requirements.txt
 ```
 
-### Pre-trained Models Required
-
-Download the following and place them in the project root or `checkpoints/` directory:
+Download the pre-trained models below and place them in the project root or `checkpoints/`.
 
 | Model | Purpose | Dim | Source |
 |-------|---------|-----|--------|
-| `yolov8x-pose.pt` | 2D Pose (17 keypoints) | 34 | [Ultralytics YOLOv8-Pose](https://docs.ultralytics.com/tasks/pose/) |
-| `yolov8x-face-lindevs.pt` | Face Detection | — | [YOLOv8-Face](https://github.com/akanametov/yolo-face) |
-| UniGaze MAE-B16 | 2D Gaze (pitch, yaw) | 2 | [UniGaze](https://github.com/lrdmurthy/unigaze) |
-| `FMAE_ViT_base.pth` | Facial AU Detection (12 AUs) | 12 | [FMAE-IAT](https://github.com/MSA-LMC/FMAE-IAT) |
-
----
+| `yolov8x-pose.pt` | 2D pose (17 keypoints) | 34 | [Ultralytics YOLOv8-Pose](https://docs.ultralytics.com/tasks/pose/) |
+| `yolov8x-face-lindevs.pt` | Face detection | — | [YOLOv8-Face](https://github.com/akanametov/yolo-face) |
+| UniGaze MAE-B16 | 2D gaze (pitch, yaw) | 2 | [UniGaze](https://github.com/lrdmurthy/unigaze) |
+| `FMAE_ViT_base.pth` | Facial AU detection (12 AUs) | 12 | [FMAE-IAT](https://github.com/MSA-LMC/FMAE-IAT) |
 
 ## Usage
 
-### Step 1: Feature Extraction
+### 1. Extract per-frame features
 
-Extract per-frame features from each modality independently.
-
-**2D Pose (YOLOv8-Pose)** — 17 keypoints (x, y) = 34 dimensions:
 ```bash
+# 2D pose: 17 keypoints (x, y) = 34-d
 python feature_extraction/extract_pose.py \
     --data_root /path/to/dataset \
     --save_dir saved_frames_pose
-```
 
-**2D Gaze (UniGaze)** — pitch and yaw = 2 dimensions:
-```bash
+# 2D gaze: pitch, yaw = 2-d
 python feature_extraction/extract_gaze.py \
     --data_root /path/to/dataset \
     --save_dir saved_frames_gaze \
     --model_config /path/to/unigaze/configs/model/mae_b_16_gaze.yaml \
     --checkpoint /path/to/unigaze/checkpoints/unigaze_b16_joint.pth.tar \
     --face_model /path/to/unigaze/data/face_model.txt
-```
 
-**Facial Movement / Action Units (FMAE-IAT)** — 12 AUs:
-```bash
+# Facial movement: 12 action units
 python feature_extraction/extract_facial_movement.py \
     --data_root /path/to/dataset \
     --save_dir saved_frames_au \
     --checkpoint checkpoints/FMAE_ViT_base.pth
 ```
 
-### Step 2: Merge Features
-
-Fuse per-frame features from all three modalities into a single `.pt` file:
+### 2. Merge features
 
 ```bash
 python data_processing/merge_features.py \
@@ -159,9 +139,7 @@ python data_processing/merge_features.py \
     --output_path features/pose_gaze_fm_1frame.pt
 ```
 
-### Step 3: Generate Temporal Sequences
-
-Convert single-frame features into temporal sequences via sliding window with uniform subsampling:
+### 3. Generate temporal sequences
 
 ```bash
 python data_processing/generate_sequences.py \
@@ -175,25 +153,23 @@ python data_processing/generate_sequences.py \
 
 | Argument | Description |
 |----------|-------------|
-| `--span_frames` | Temporal window size (e.g., 30 frames = 3s at 10 fps) |
-| `--sample_frames` | Frames to uniformly subsample from each span |
+| `--span_frames` | Temporal window size (e.g., 30 frames = 3 s at 10 fps) |
+| `--sample_frames` | Frames uniformly subsampled from each span |
 | `--step` | Sliding stride between windows |
 | `--label_from` | `span` (majority vote, recommended), `sample`, or `center` |
 
-### Step 4: Train Classifier
+### 4. Train a classifier
 
-**LSTM:**
 ```bash
+# LSTM
 python train.py \
     --data_path features/pose_gaze_fm_30f10s_10.pt \
     --model lstm \
     --features pose+gaze+fm \
     --hidden_dim 256 --num_layers 3 \
     --batch_size 256 --epochs 200 --lr 1e-3 --patience 10
-```
 
-**Transformer (paper config):**
-```bash
+# Transformer (paper configuration)
 python train.py \
     --data_path features/pose_gaze_fm_50f10s_50.pt \
     --model transformer \
@@ -201,64 +177,46 @@ python train.py \
     --hidden_dim 256 --nhead 8 --num_encoder_layers 4 \
     --dropout 0.2 \
     --batch_size 128 --epochs 200 --lr 1e-4 --patience 10
-```
 
-**MLP (single-frame baseline):**
-```bash
+# MLP (single-frame baseline)
 python train_mlp_singleframe.py \
     --data_path features/pose_gaze_fm_1frame.pt \
     --features pose+gaze+fm \
     --batch_size 256 --epochs 200 --lr 1e-3
 ```
 
-**Feature selection** — any combination of `pose`, `gaze`, `fm`:
-```bash
---features pose+fm       # Pose + Facial Movement only
---features pose          # Pose only
---features pose+gaze+fm  # All features (default)
-```
+`--features` accepts any combination of `pose`, `gaze`, `fm` joined by `+` (default: `pose+gaze+fm`), e.g. `pose+fm` or `pose`.
 
-Results (config, best model, confusion matrix, F1 analysis, computational stats) are saved to `results/<timestamp>/`.
+Each run saves its config, best model, confusion matrix, F1 analysis, and computational stats to `results/<timestamp>/`.
 
----
-
-## Feature Description
+## Features
 
 | Index | Feature | Dim | Extractor |
 |-------|---------|-----|-----------|
-| 0-33 | 2D Body Pose (17 keypoints x, y) | 34 | YOLOv8x-Pose |
-| 34-35 | 2D Gaze Direction (pitch, yaw) | 2 | UniGaze (MAE-B16) |
-| 36-47 | Facial Action Units (AU1,2,4,6,7,10,12,14,15,17,23,24) | 12 | FMAE-IAT (ViT-Base) |
-| **Total** | **Concatenated per frame** | **48** | |
+| 0–33 | 2D body pose (17 keypoints x, y) | 34 | YOLOv8x-Pose |
+| 34–35 | 2D gaze direction (pitch, yaw) | 2 | UniGaze (MAE-B16) |
+| 36–47 | Facial action units (AU1, 2, 4, 6, 7, 10, 12, 14, 15, 17, 23, 24) | 12 | FMAE-IAT (ViT-Base) |
+| | **Concatenated per frame** | **48** | |
 
-All features are L2-normalized per frame before concatenation.
+Each modality is L2-normalized per frame before concatenation.
 
----
-
-## Project Structure
+## Project structure
 
 ```
-UMTRI_Occupant_Behavior/
 ├── feature_extraction/
-│   ├── extract_pose.py              # YOLOv8-Pose keypoint extraction
-│   ├── extract_gaze.py              # UniGaze 2D gaze estimation
-│   └── extract_facial_movement.py   # FMAE-IAT Action Unit detection
+│   ├── extract_pose.py              # YOLOv8-Pose keypoints
+│   ├── extract_gaze.py              # UniGaze 2D gaze
+│   └── extract_facial_movement.py   # FMAE-IAT action units
 ├── data_processing/
-│   ├── merge_features.py            # Fuse multi-modal features into .pt
-│   ├── generate_sequences.py        # Sliding window + uniform subsampling
-│   └── mapping_generator.py         # Hash-to-SubjectID mapping utility
-├── train.py                         # Train LSTM / MLP / Transformer (sequences)
-├── train_mlp_singleframe.py         # Train MLP on single-frame features
-├── requirements.txt
-├── .gitignore
-└── README.md
+│   ├── merge_features.py            # fuse modalities into one .pt
+│   ├── generate_sequences.py        # sliding window + uniform subsampling
+│   └── mapping_generator.py         # hash-to-SubjectID mapping utility
+├── train.py                         # LSTM / MLP / Transformer on sequences
+├── train_mlp_singleframe.py         # MLP on single-frame features
+└── requirements.txt
 ```
-
----
 
 ## Citation
-
-If you find this work useful, please cite our paper:
 
 ```bibtex
 @article{kim2025robust,
@@ -274,8 +232,6 @@ If you find this work useful, please cite our paper:
 }
 ```
 
----
-
 ## License
 
-This project is released under the [MIT License](LICENSE).
+Released under the [MIT License](LICENSE).
